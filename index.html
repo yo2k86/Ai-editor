@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Image Editor - Professional</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0d0c1d; /* Deep space blue */
+            --bg-light: #e9e8f5; /* Light lavender gray */
+            --surface-dark: #1c1b2d; /* Dark purple-blue */
+            --surface-light: #ffffff;
+            --primary: #ff00ff; /* Hot Magenta */
+            --primary-hover: #e600e6;
+            --secondary: #00ffff; /* Bright Cyan */
+            --text-dark-primary: #ffffff; /* Pure White for max contrast */
+            --text-dark-secondary: #b0b0d0; /* Brighter muted lavender */
+            --text-light-primary: #000000; /* Pure Black for max contrast */
+            --text-light-secondary: #555555; /* Darker gray for placeholders */
+            --border-dark: #8c008c; /* Dark Magenta */
+            --border-light: #d1d5db;
+        }
+        .dark body { background-color: var(--bg-dark); color: var(--text-dark-primary); font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg-light); color: var(--text-light-primary); font-family: 'Inter', sans-serif; }
+        .font-orbitron { font-family: 'Orbitron', sans-serif; }
+        
+        /* Cyberpunk Style */
+        .cyberpunk-panel {
+            background: rgba(28, 27, 45, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 0, 255, 0.5); /* Neon Magenta Border */
+            box-shadow: 0 0 25px rgba(255, 0, 255, 0.25), inset 0 0 10px rgba(255, 0, 255, 0.1); /* Outer & Inner Glow */
+            transition: all 0.3s ease;
+        }
+        .cyberpunk-light {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(79, 70, 229, 0.5);
+            box-shadow: 0 0 25px rgba(79, 70, 229, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary { background: linear-gradient(45deg, var(--primary), var(--secondary)); transition: all 0.3s ease; box-shadow: 0 0 15px rgba(255, 0, 255, 0.5); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 25px rgba(0, 255, 255, 0.7); }
+        .btn-secondary {
+            background-color: transparent;
+            border: 1px solid var(--secondary); /* Cyan border */
+            color: var(--secondary);
+            transition: all 0.3s ease;
+        }
+        .btn-secondary:hover {
+            background-color: var(--secondary);
+            color: var(--bg-dark);
+            box-shadow: 0 0 15px var(--secondary);
+        }
+
+        input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 8px; border-radius: 5px; outline: none; opacity: 0.7; transition: opacity .2s; }
+        .dark input[type=range] { background: var(--border-dark); }
+        html:not(.dark) input[type=range] { background: var(--border-light); }
+        input[type=range]:hover { opacity: 1; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; border-radius: 50%; background: var(--secondary); cursor: pointer; box-shadow: 0 0 10px rgba(0, 255, 255, 0.8); }
+        html:not(.dark) input[type=range]::-webkit-slider-thumb { background: var(--primary); box-shadow: 0 0 10px rgba(79, 70, 229, 0.8); }
+        
+        /* New Elegant Loader */
+        .loader {
+            width: 60px; height: 60px;
+            position: relative;
+        }
+        .loader:before, .loader:after {
+            content: ""; position: absolute;
+            top: 50%; left: 50%;
+            width: 100%; height: 100%;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            animation: glitch 2s linear infinite;
+            box-shadow: 0 0 20px var(--secondary);
+        }
+        .loader:after {
+            animation-delay: -1s;
+            box-shadow: 0 0 20px var(--primary);
+        }
+        @keyframes glitch {
+            0% { clip-path: polygon(50% 50%, 50% 50%, 50% 50%, 50% 50%, 50% 50%, 50% 50%); }
+            25% { clip-path: polygon(0 0, 50% 50%, 100% 0, 100% 50%, 50% 50%, 0 50%); }
+            50% { clip-path: polygon(0 100%, 50% 50%, 100% 100%, 100% 50%, 50% 50%, 0 50%); }
+            75% { clip-path: polygon(0 0, 50% 50%, 100% 0, 100% 100%, 50% 50%, 0 100%); }
+            100% { clip-path: polygon(50% 50%, 50% 50%, 50% 50%, 50% 50%, 50% 50%, 50% 50%); }
+        }
+
+        .spinner-btn {
+            border: 2px solid transparent;
+            border-top-color: white;
+            border-radius: 50%;
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="min-h-screen transition-colors duration-500">
+    <div id="app" class="container mx-auto p-4 md:p-8">
+        
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <div class="flex justify-center items-center mb-4 gap-4">
+                <h1 class="font-orbitron text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-cyan-400" style="text-shadow: 0 0 15px rgba(255, 0, 255, 0.5);">
+                    AI Image Editor
+                </h1>
+                <label for="theme-toggle" class="flex items-center cursor-pointer">
+                    <div class="relative">
+                        <input type="checkbox" id="theme-toggle" class="sr-only">
+                        <div class="block bg-gray-600 w-14 h-8 rounded-full"></div>
+                        <div class="dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition"></div>
+                    </div>
+                </label>
+            </div>
+            <p class="font-orbitron text-sm dark:text-gray-400 text-gray-600">dibuat oleh bang pro</p>
+            <p class="mt-4 max-w-2xl mx-auto dark:text-gray-300 text-gray-700">
+                Unggah dan edit gambar secara profesional menggunakan AI dengan perintah sederhana.
+            </p>
+        </header>
+
+        <!-- API Key Panel -->
+        <section id="api-key-section" class="mb-8 cyberpunk-panel p-6 rounded-xl">
+            <label for="api-key-input" class="block mb-2 font-semibold">API Key Gemini Anda</label>
+            <div class="flex flex-col sm:flex-row gap-4">
+                <input type="password" id="api-key-input" class="w-full p-3 rounded-lg bg-transparent border dark:border-gray-600 border-gray-300 focus:ring-2 focus:ring-cyan-500 outline-none transition" placeholder="Masukkan API Key Anda di sini">
+                <button id="get-api-key-btn" class="px-6 py-2 rounded-lg font-bold btn-secondary whitespace-nowrap">Dapatkan Key</button>
+                <button id="save-api-key-btn" class="px-6 py-2 rounded-lg text-white font-bold btn-primary">Simpan</button>
+            </div>
+            <p id="api-key-status" class="text-xs mt-2 dark:text-gray-400 text-gray-600">API Key dibutuhkan untuk menggunakan editor.</p>
+        </section>
+
+        <!-- Main Content -->
+        <main class="max-w-6xl mx-auto">
+            <div id="edit-view">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Left Panel: Controls -->
+                    <div class="space-y-4">
+                        <!-- Upload Panel -->
+                        <div class="p-6 rounded-xl cyberpunk-panel dark:cyberpunk-panel cyberpunk-light">
+                            <label class="block mb-2 font-semibold dark:text-gray-300 text-gray-800">1. Unggah Gambar</label>
+                            <div id="drop-zone" class="flex flex-col items-center justify-center w-full h-32 px-4 transition bg-transparent border-2 border-dashed rounded-lg cursor-pointer dark:border-gray-600 border-gray-300 hover:border-cyan-400">
+                                <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                    <svg class="w-8 h-8 mb-4 dark:text-gray-400 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/></svg>
+                                    <p class="mb-2 text-sm dark:text-gray-400 text-gray-500"><span class="font-semibold">Klik untuk unggah</span> atau seret</p>
+                                </div>
+                                <input id="upload-image-input" type="file" class="hidden" accept="image/*">
+                            </div>
+                             <div id="upload-preview-container" class="hidden relative w-full h-32 mt-2">
+                                <img id="upload-preview-image" src="" class="w-full h-full object-contain rounded-lg border-2 dark:border-gray-600 border-gray-300 p-1">
+                                <button id="remove-upload-btn" class="absolute -top-2 -right-2 bg-red-600 text-white rounded-full p-1 w-7 h-7 flex items-center justify-center text-lg font-bold leading-none">&times;</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Prompt Panel -->
+                        <div class="p-6 rounded-xl cyberpunk-panel dark:cyberpunk-panel cyberpunk-light">
+                            <div class="flex justify-between items-center mb-2">
+                                <label for="edit-prompt" class="block font-semibold dark:text-gray-300 text-gray-800">2. Berikan Perintah Detail</label>
+                                <button id="enhance-prompt-btn" class="flex items-center gap-1 text-sm text-cyan-400 hover:text-cyan-300 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                    <span id="enhance-btn-icon">?</span>
+                                    <span id="enhance-btn-text">Sempurnakan</span>
+                                </button>
+                            </div>
+                            <textarea id="edit-prompt" rows="3" class="w-full p-3 rounded-lg bg-transparent border dark:border-gray-600 border-gray-300 focus:ring-2 focus:ring-cyan-500 outline-none transition" placeholder="Contoh: Rubah warna topeng menjadi merah putih"></textarea>
+                        </div>
+
+                        <!-- Negative Prompt Panel -->
+                        <div class="p-6 rounded-xl cyberpunk-panel dark:cyberpunk-panel cyberpunk-light">
+                            <label for="negative-prompt" class="block mb-2 font-semibold dark:text-gray-300 text-gray-800">3. Prompt Negatif (Opsional)</label>
+                            <input type="text" id="negative-prompt" class="w-full p-3 rounded-lg bg-transparent border dark:border-gray-600 border-gray-300 focus:ring-2 focus:ring-cyan-500 outline-none transition" placeholder="Contoh: teks, watermark, gambar buram">
+                        </div>
+
+                        <!-- Strength Panel -->
+                        <div class="p-6 rounded-xl cyberpunk-panel dark:cyberpunk-panel cyberpunk-light">
+                            <label for="edit-strength" class="block mb-2 font-semibold dark:text-gray-300 text-gray-800">4. Kekuatan Edit: <span id="edit-strength-value">8</span></label>
+                            <input id="edit-strength" type="range" min="1" max="10" value="8" class="w-full">
+                        </div>
+
+                        <button id="apply-btn" class="w-full py-3 rounded-lg text-white font-bold btn-primary" disabled>
+                            Terapkan Perubahan
+                        </button>
+                    </div>
+
+                    <!-- Right Panel: Preview -->
+                    <div id="edit-preview-container" class="flex flex-col items-center justify-center p-6 rounded-xl cyberpunk-panel dark:cyberpunk-panel cyberpunk-light">
+                        <div id="edit-loader" class="hidden flex-col items-center gap-4">
+                            <div class="loader"></div>
+                            <p class="dark:text-gray-400 text-gray-600 mt-4">Menerapkan Sihir Digital...</p>
+                        </div>
+                        <div id="edit-placeholder" class="text-center dark:text-gray-500 text-gray-500">
+                             <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                            <p class="mt-4 text-lg">Unggah gambar untuk memulai</p>
+                        </div>
+                        <div id="edit-result" class="hidden w-full">
+                            <img id="edit-image-preview" src="" class="w-full h-auto object-contain rounded-lg max-h-[500px]">
+                            <a id="download-edit-btn" href="#" download="ai-edited-image.png" class="mt-4 w-full block text-center py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-bold transition">
+                                Unduh Gambar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Section -->
+            <section id="history-section" class="mt-12">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold font-orbitron">Riwayat Sesi</h2>
+                    <button id="clear-history-btn" class="px-4 py-2 text-sm rounded-lg bg-red-600 hover:bg-red-700 text-white transition">Hapus Semua</button>
+                </div>
+                <div id="history-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                </div>
+                <p id="no-history" class="text-center dark:text-gray-500 text-gray-500 mt-4">Belum ada riwayat.</p>
+            </section>
+        </main>
+        
+        <div id="error-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="dark:bg-gray-800 bg-white p-6 rounded-lg shadow-xl max-w-sm w-full text-center">
+                <h3 class="text-lg font-bold text-red-500 mb-2">Terjadi Kesalahan</h3>
+                <p id="error-message" class="dark:text-gray-300 text-gray-700 mb-4">Pesan error.</p>
+                <button id="close-error-modal" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const themeToggle = document.getElementById('theme-toggle');
+            
+            // API Key elements
+            const apiKeyInput = document.getElementById('api-key-input');
+            const saveApiKeyBtn = document.getElementById('save-api-key-btn');
+            const getApiKeyBtn = document.getElementById('get-api-key-btn');
+            const apiKeyStatus = document.getElementById('api-key-status');
+
+            // Edit View Elements
+            const dropZone = document.getElementById('drop-zone');
+            const uploadImageInput = document.getElementById('upload-image-input');
+            const uploadPreviewContainer = document.getElementById('upload-preview-container');
+            const uploadPreviewImage = document.getElementById('upload-preview-image');
+            const removeUploadBtn = document.getElementById('remove-upload-btn');
+            const editPromptInput = document.getElementById('edit-prompt');
+            const enhancePromptBtn = document.getElementById('enhance-prompt-btn');
+            const enhanceBtnIcon = document.getElementById('enhance-btn-icon');
+            const enhanceBtnText = document.getElementById('enhance-btn-text');
+            const negativePromptInput = document.getElementById('negative-prompt');
+            const editStrengthSlider = document.getElementById('edit-strength');
+            const editStrengthValue = document.getElementById('edit-strength-value');
+            const applyBtn = document.getElementById('apply-btn');
+            const editLoader = document.getElementById('edit-loader');
+            const editPlaceholder = document.getElementById('edit-placeholder');
+            const editResult = document.getElementById('edit-result');
+            const editImagePreview = document.getElementById('edit-image-preview');
+            const downloadEditBtn = document.getElementById('download-edit-btn');
+            let uploadedImageBase64 = null;
+
+            // History Elements
+            const historyGrid = document.getElementById('history-grid');
+            const noHistoryMsg = document.getElementById('no-history');
+            const clearHistoryBtn = document.getElementById('clear-history-btn');
+            
+            // Error Modal Elements
+            const errorModal = document.getElementById('error-modal');
+            const errorMessage = document.getElementById('error-message');
+            const closeErrorModalBtn = document.getElementById('close-error-modal');
+
+            // --- State ---
+            let history = JSON.parse(localStorage.getItem('aiImageHistory')) || [];
+
+            // --- Functions ---
+            const showError = (message) => {
+                errorMessage.textContent = message;
+                errorModal.classList.remove('hidden');
+            };
+
+            const applyTheme = (isDark) => {
+                if (isDark) {
+                    document.documentElement.classList.add('dark');
+                    themeToggle.checked = true;
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    themeToggle.checked = false;
+                }
+            };
+
+            themeToggle.addEventListener('change', () => {
+                localStorage.setItem('theme', themeToggle.checked ? 'dark' : 'light');
+                applyTheme(themeToggle.checked);
+            });
+
+            editStrengthSlider.addEventListener('input', (e) => {
+                editStrengthValue.textContent = e.target.value;
+            });
+
+            const fetchWithBackoff = async (url, options, maxRetries = 3) => {
+                let attempt = 0;
+                while (attempt < maxRetries) {
+                    try {
+                        const response = await fetch(url, options);
+                        if (!response.ok) {
+                            const errorData = await response.json();
+                            throw new Error(errorData.error?.message || `HTTP error! status: ${response.status}`);
+                        }
+                        return await response.json();
+                    } catch (error) {
+                        attempt++;
+                        if (attempt >= maxRetries) {
+                            throw error;
+                        }
+                        const delay = Math.pow(2, attempt) * 1000;
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    }
+                }
+            };
+
+            const handleFileUpload = (file) => {
+                if (file && file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const imageUrl = e.target.result;
+                        uploadedImageBase64 = imageUrl.split(',')[1];
+                        
+                        editImagePreview.src = imageUrl;
+                        editPlaceholder.classList.add('hidden');
+                        editResult.classList.remove('hidden');
+                        
+                        uploadPreviewImage.src = imageUrl;
+                        dropZone.classList.add('hidden');
+                        uploadPreviewContainer.classList.remove('hidden');
+
+                        applyBtn.disabled = !localStorage.getItem('geminiApiKey');
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    showError('Silakan unggah file gambar yang valid.');
+                }
+            };
+            
+            dropZone.addEventListener('click', () => uploadImageInput.click());
+            uploadImageInput.addEventListener('change', (e) => handleFileUpload(e.target.files[0]));
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, (e) => { e.preventDefault(); e.stopPropagation(); }, false);
+            });
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => dropZone.style.borderColor = 'var(--secondary)');
+            });
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => dropZone.style.borderColor = '');
+            });
+            dropZone.addEventListener('drop', (e) => handleFileUpload(e.dataTransfer.files[0]));
+            
+            removeUploadBtn.addEventListener('click', () => {
+                uploadedImageBase64 = null;
+                uploadImageInput.value = '';
+                
+                editResult.classList.add('hidden');
+                editPlaceholder.classList.remove('hidden');
+                editImagePreview.src = '';
+                
+                uploadPreviewContainer.classList.add('hidden');
+                dropZone.classList.remove('hidden');
+                
+                applyBtn.disabled = true;
+            });
+
+            const handleEditApiResponse = (result) => {
+                const base64Data = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+                const finishReason = result?.candidates?.[0]?.finishReason;
+
+                if (base64Data) {
+                    const imageUrl = `data:image/png;base64,${base64Data}`;
+                    editImagePreview.src = imageUrl;
+                    downloadEditBtn.href = imageUrl;
+                    editResult.classList.remove('hidden');
+                    saveToHistory(imageUrl);
+                } else {
+                    console.error("API Response Error. Full response:", JSON.stringify(result, null, 2));
+                    let specificError = 'Gagal memproses gambar dari API. Respons tidak berisi data gambar.';
+                    if (finishReason === 'SAFETY') {
+                        specificError = 'Permintaan diblokir karena alasan keamanan. Coba deskripsi atau gambar yang berbeda.';
+                    } else if (result?.error?.message) {
+                        specificError = `Error dari API: ${result.error.message}`;
+                    }
+                    throw new Error(specificError);
+                }
+            };
+
+            const applyEdit = async () => {
+                const apiKey = localStorage.getItem('geminiApiKey');
+                if (!apiKey) {
+                    showError('Silakan masukkan dan simpan API Key Anda terlebih dahulu.');
+                    return;
+                }
+
+                const editPrompt = editPromptInput.value.trim();
+                const negativePrompt = negativePromptInput.value.trim();
+                if (!editPrompt || !uploadedImageBase64) {
+                    showError('Gambar dan perintah detail harus diisi.');
+                    return;
+                }
+
+                let finalPrompt = `Perintah Mutlak: Anda adalah editor foto profesional. Prioritas utama Anda adalah menjalankan perintah pengguna dengan akurat. Perintah pengguna adalah: "${editPrompt}". Saat menjalankan perintah ini, pertahankan sebanyak mungkin aspek asli dari gambar (seperti identitas wajah, kualitas foto) yang tidak bertentangan langsung dengan perintah tersebut. Jika perintahnya adalah 'ubah A menjadi B', maka Anda diizinkan sepenuhnya untuk mengubah A.`;
+                
+                if (negativePrompt) {
+                    finalPrompt += ` Hindari elemen berikut: ${negativePrompt}.`;
+                }
+                
+                finalPrompt += ` Kekuatan edit yang diinginkan adalah ${editStrengthSlider.value} dari 10.`;
+
+                editLoader.classList.remove('hidden');
+                editResult.classList.add('hidden');
+                applyBtn.disabled = true;
+                applyBtn.textContent = 'Memproses...';
+
+                try {
+                    const payload = {
+                        contents: [{
+                            parts: [
+                                { text: finalPrompt },
+                                { inlineData: { mimeType: "image/png", data: uploadedImageBase64 } }
+                            ]
+                        }],
+                         generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
+                    };
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${apiKey}`;
+
+                    const result = await fetchWithBackoff(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    handleEditApiResponse(result);
+                } catch (error) {
+                    console.error('Error editing image:', error);
+                    showError(error.message || 'Terjadi kesalahan saat mengedit gambar.');
+                    editResult.classList.remove('hidden');
+                } finally {
+                    editLoader.classList.add('hidden');
+                    applyBtn.disabled = false;
+                    applyBtn.textContent = 'Terapkan Perubahan';
+                }
+            };
+
+            applyBtn.addEventListener('click', applyEdit);
+            
+            // --- Enhance Prompt ---
+            editPromptInput.addEventListener('input', () => {
+                enhancePromptBtn.disabled = editPromptInput.value.trim().length === 0 || !localStorage.getItem('geminiApiKey');
+            });
+
+            const enhancePrompt = async () => {
+                const apiKey = localStorage.getItem('geminiApiKey');
+                 if (!apiKey) {
+                    showError('Silakan masukkan dan simpan API Key Anda terlebih dahulu.');
+                    return;
+                }
+                const userPrompt = editPromptInput.value.trim();
+                if (!userPrompt) return;
+
+                enhancePromptBtn.disabled = true;
+                enhanceBtnText.textContent = 'Menyempurnakan...';
+                enhanceBtnIcon.innerHTML = '<div class="spinner-btn"></div>';
+
+                try {
+                    const systemPrompt = `Anda adalah seorang ahli prompt AI gambar. Tulis ulang perintah pengguna berikut menjadi deskripsi visual yang sangat detail dan kaya untuk AI gambar. Fokus pada detail seperti gaya, pencahayaan, material, dan suasana. Perintah Pengguna: "${userPrompt}"`;
+                    const payload = { contents: [{ parts: [{ text: systemPrompt }] }] };
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+                    const result = await fetchWithBackoff(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    if (result.candidates && result.candidates[0].content.parts[0].text) {
+                        editPromptInput.value = result.candidates[0].content.parts[0].text;
+                    } else {
+                        throw new Error("Gagal mendapatkan respons dari API.");
+                    }
+
+                } catch (error) {
+                    console.error("Error enhancing prompt:", error);
+                    showError("Gagal menyempurnakan prompt. Silakan coba lagi.");
+                } finally {
+                    enhancePromptBtn.disabled = false;
+                    enhanceBtnText.textContent = 'Sempurnakan';
+                    enhanceBtnIcon.innerHTML = '?';
+                }
+            };
+            enhancePromptBtn.addEventListener('click', enhancePrompt);
+
+
+            // --- History Management ---
+            const renderHistory = () => {
+                historyGrid.innerHTML = '';
+                if (history.length === 0) {
+                    noHistoryMsg.classList.remove('hidden');
+                    historyGrid.classList.add('hidden');
+                } else {
+                    noHistoryMsg.classList.add('hidden');
+                    historyGrid.classList.remove('hidden');
+                    history.forEach((imgData, index) => {
+                        const item = document.createElement('div');
+                        item.className = 'relative group';
+                        item.innerHTML = `
+                            <img src="${imgData}" class="w-full h-full object-cover rounded-lg aspect-square">
+                            <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button data-index="${index}" class="delete-history-item p-2 bg-red-600 rounded-full text-white">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+                                </button>
+                            </div>
+                        `;
+                        historyGrid.appendChild(item);
+                    });
+                }
+            };
+
+            const saveToHistory = (imageData) => {
+                history.unshift(imageData);
+                const trySave = () => {
+                    try {
+                        localStorage.setItem('aiImageHistory', JSON.stringify(history));
+                    } catch (e) {
+                        if ((e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') && history.length > 1) {
+                            history.pop();
+                            trySave();
+                        } else {
+                            console.error("Gagal menyimpan riwayat, penyimpanan mungkin penuh.", e);
+                        }
+                    }
+                };
+                trySave();
+                renderHistory();
+            };
+
+            historyGrid.addEventListener('click', (e) => {
+                const deleteBtn = e.target.closest('.delete-history-item');
+                if (deleteBtn) {
+                    const index = parseInt(deleteBtn.dataset.index, 10);
+                    history.splice(index, 1);
+                    localStorage.setItem('aiImageHistory', JSON.stringify(history));
+                    renderHistory();
+                }
+            });
+
+            clearHistoryBtn.addEventListener('click', () => {
+                history = [];
+                localStorage.removeItem('aiImageHistory');
+                renderHistory();
+            });
+            
+            closeErrorModalBtn.addEventListener('click', () => {
+                errorModal.classList.add('hidden');
+            });
+
+            // --- API Key Management ---
+            const checkApiKey = () => {
+                const apiKey = localStorage.getItem('geminiApiKey');
+                if (apiKey) {
+                    apiKeyInput.value = apiKey;
+                    apiKeyStatus.textContent = "API Key tersimpan. Anda siap mengedit.";
+                    apiKeyStatus.style.color = 'var(--secondary)';
+                    if(uploadedImageBase64) applyBtn.disabled = false;
+                    enhancePromptBtn.disabled = editPromptInput.value.trim().length === 0;
+                } else {
+                    apiKeyStatus.textContent = "API Key dibutuhkan untuk menggunakan editor.";
+                    apiKeyStatus.style.color = '';
+                    applyBtn.disabled = true;
+                    enhancePromptBtn.disabled = true;
+                }
+            };
+
+            saveApiKeyBtn.addEventListener('click', () => {
+                const key = apiKeyInput.value.trim();
+                if (key) {
+                    localStorage.setItem('geminiApiKey', key);
+                    checkApiKey();
+                } else {
+                    localStorage.removeItem('geminiApiKey');
+                    checkApiKey();
+                }
+            });
+            
+            getApiKeyBtn.addEventListener('click', () => {
+                window.open('https://aistudio.google.com/app/apikey', '_blank');
+            });
+
+            const init = () => {
+                const savedTheme = localStorage.getItem('theme');
+                applyTheme(savedTheme === 'dark' || !savedTheme);
+                renderHistory();
+                checkApiKey();
+            };
+
+            init();
+        });
+    </script>
+</body>
+</html>
